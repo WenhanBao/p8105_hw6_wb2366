@@ -9,7 +9,7 @@ output: github_document
 library(tidyverse)
 library(readr)
 library(corrplot)
- 
+library(modelr)
 ```
 
 
@@ -31,7 +31,7 @@ apply(is.na(birthweight_df), 2, which) ## make sure that there is no missing val
 
 **Propose a regression model for birthweight.(Based on the a data-driven model-building)** 
 
-```{r, fig.length = 6}
+```{r}
 birthweight_df %>%
   select(-babysex,-frace,-malform,-mrace,-pnumlbw,-pnumsga) %>%
   cor(method = "pearson") %>%
@@ -44,5 +44,39 @@ birthweight_df %>%
     order = "AOE"
   )
 ```
+
+```{r}
+fit_bwt_le_he <- lm(bwt ~ blength + bhead, data = birthweight_df) 
+
+fit_bwt_le_he %>%   
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
+```
+
+```{r}
+birthweight_df %>%
+  modelr::add_residuals(fit_bwt_le_he) %>%
+  modelr::add_predictions(fit_bwt_le_he) %>%
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0,
+             col = "red",
+             linetype = "dashed") +
+  geom_smooth(method = "loess") +
+  labs(title = "Residual vs Fitted Plot",
+       x = "Fitted values",
+       y = "Residuals") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+**Describe the modeling process**
+
+**Step1:**make a multiple Pearson's correlation coefficient matrix in which the result is closer to 1 or -1 means that there is a high correlation between those two variants.
+
+**Step2:**Comparing the results, I notice that `blength`(baby’s length at birth) and `bhead`(baby’s head circumference at birth) have a potential correlation with `bwt`
+
+**Step3:**Build a linear regression model for baby's birth weight which may depend on baby’s length and baby’s head circumference at birth.
+
+**Step4:**Here we see that linearity seems to hold reasonably well, as the blue line is close to the dashed line, especially for scale from 1500 to 4000 where most data falls in.
 
 
