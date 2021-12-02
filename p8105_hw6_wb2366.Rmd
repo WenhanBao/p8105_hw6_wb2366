@@ -1,0 +1,36 @@
+---
+title: "p8105_hw6_wb2366"
+auther: Wenhan Bao
+Date: 2021-11-30
+output: github_document
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(modelr)
+```
+
+
+## Problem1
+
+Load the dataset and clean
+```{r}
+birthweight_df <- read_csv("birthweight.csv") %>%
+  mutate(
+    babysex = fct_infreq(as.factor(babysex)),
+    frace = fct_infreq(as.factor(frace)),
+    malform = fct_infreq(as.factor(malform)),
+    mrace = fct_infreq(as.factor(mrace))
+  )
+
+apply(is.na(birthweight_df), 2, which) ## make sure that there is no missing value
+```
+
+Propose a regression model for birthweight. (birthweight may depend on mother's race)
+
+```{r}
+
+```
+
+
