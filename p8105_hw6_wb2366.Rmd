@@ -8,13 +8,15 @@ output: github_document
 ```{r}
 library(tidyverse)
 library(readr)
-library(modelr)
+library(corrplot)
+ 
 ```
 
 
 ## Problem1
 
-Load the dataset and clean
+**Load the dataset, clean and check for missing data**
+
 ```{r}
 birthweight_df <- read_csv("birthweight.csv") %>%
   mutate(
@@ -27,10 +29,20 @@ birthweight_df <- read_csv("birthweight.csv") %>%
 apply(is.na(birthweight_df), 2, which) ## make sure that there is no missing value
 ```
 
-Propose a regression model for birthweight. (birthweight may depend on mother's race)
+**Propose a regression model for birthweight.(Based on the a data-driven model-building)** 
 
-```{r}
-
+```{r, fig.length = 6}
+birthweight_df %>%
+  select(-babysex,-frace,-malform,-mrace,-pnumlbw,-pnumsga) %>%
+  cor(method = "pearson") %>%
+  corrplot(
+    method = "color",
+    type = "lower",
+    tl.col = "Black",
+    tl.srt = 45,
+    diag = F,
+    order = "AOE"
+  )
 ```
 
 
