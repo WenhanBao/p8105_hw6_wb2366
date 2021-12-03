@@ -177,10 +177,12 @@ bootstrap_df <-
 Distribution of $\hat{r}^2$
 
 ```{r}
-plot_r_squared = bootstrap_df %>% 
-  select(.id, r.squared) %>% 
-  distinct() %>% 
-  ggplot(aes(x = r.squared)) + 
+r_squared_df <- bootstrap_df %>%
+  select(.id, r.squared) %>%
+  distinct()
+
+plot_r_squared <- ggplot(r_squared_df,
+                         aes(x = r.squared)) +
   geom_density(color = "chocolate1") +
   labs(y = "Density",
        x = "R.squared")  
@@ -189,22 +191,50 @@ plot_r_squared = bootstrap_df %>%
 Distribution of $log(\hat{\beta}_0 \ast \hat{\beta}_1)$
 
 ```{r}
-plot_log = bootstrap_df %>% 
-  select(.id, term, estimate) %>% 
-  group_by(.id) %>% 
+log_df = bootstrap_df %>%
+  select(.id, term, estimate) %>%
+  group_by(.id) %>%
   mutate(
     estimate_beta0 = head(estimate, n = 1),
-    estimate_beta1 = tail(estimate, n = 1)) %>% 
-  select(.id, estimate_beta0, estimate_beta1) %>% 
-  distinct() %>% 
-  mutate(log_beta01 = log10(estimate_beta0*estimate_beta1)) %>% 
-  ggplot(aes(x = log_beta01)) +
-  geom_density(color = "chartreuse") + 
+    estimate_beta1 = tail(estimate, n = 1)
+  ) %>%
+  select(.id, estimate_beta0, estimate_beta1) %>%
+  distinct() %>%
+  mutate(log_beta01 = log10(estimate_beta0 * estimate_beta1))
+
+plot_log <- ggplot(log_df, 
+                   aes(x = log_beta01)) +
+  geom_density(color = "chartreuse") +
   labs(y = "Density",
-       x = "log(β0 * β1)")  
+       x = "log(β0 * β1)")
 
 plot_r_squared + plot_log
 ```
+
+**Describe the plot of two estimates:**
+According to the density distribution of two plots, the estimates of $\hat{r}^2$ is almost 0.912 and of $log(\hat{\beta}_0 \ast \hat{\beta}_1)$ is nearly 0.875
+
+
+**identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval**
+
+```{r}
+## 95% CI for r.squared
+r_squared_df %>% 
+  summarize(
+    ci_lower = quantile(r.squared, 0.025), 
+    ci_upper = quantile(r.squared, 0.975)) %>% 
+  knitr::kable(caption = "95% CI for r.squared", digits = 3)
+
+## 95% CI for log(β0 * β1)
+log_df %>% 
+  ungroup() %>% 
+  summarize(
+    ci_lower = quantile(log_beta01, 0.025), 
+    ci_upper = quantile(log_beta01, 0.975)) %>% 
+  knitr::kable(caption = "95% CI for log(β0 * β1)", digits = 3)
+
+```
+
 
 
 
