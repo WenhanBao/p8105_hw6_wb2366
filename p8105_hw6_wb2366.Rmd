@@ -11,6 +11,23 @@ library(readr)
 library(corrplot)
 library(modelr)
 library(mgcv)
+library(patchwork)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
 ```
 
 
@@ -54,7 +71,7 @@ fit_bwt_le_he %>%
   knitr::kable(digits = 3)
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 birthweight_df %>%
   modelr::add_residuals(fit_bwt_le_he) %>%
   modelr::add_predictions(fit_bwt_le_he) %>%
@@ -127,7 +144,7 @@ cv_df %>%
 
 **Load the dataset.**
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 weather_df = 
   rnoaa::meteo_pull_monitors(
     c("USW00094728"),
@@ -139,6 +156,54 @@ weather_df =
     tmin = tmin / 10,
     tmax = tmax / 10) %>%
   select(name, id, everything())
+```
+
+**Use 5000 bootstrap samples**  
+
+```{r}
+bootstrap_df <- 
+  weather_df %>% 
+  modelr::bootstrap(n = 5000) %>% 
+  mutate(
+    models = map(strap, ~lm(tmax ~ tmin, data = .x)),
+    results_R = map(models, broom::glance),
+    result_est = map(models, broom::tidy)) %>%
+  unnest(results_R) %>% 
+  select(.id, r.squared, result_est) %>% 
+  unnest(result_est) %>% 
+  select(1:4)
+```
+
+Distribution of $\hat{r}^2$
+
+```{r}
+plot_r_squared = bootstrap_df %>% 
+  select(.id, r.squared) %>% 
+  distinct() %>% 
+  ggplot(aes(x = r.squared)) + 
+  geom_density(color = "chocolate1") +
+  labs(y = "Density",
+       x = "R.squared")  
+```
+
+Distribution of $log(\hat{\beta}_0 \ast \hat{\beta}_1)$
+
+```{r}
+plot_log = bootstrap_df %>% 
+  select(.id, term, estimate) %>% 
+  group_by(.id) %>% 
+  mutate(
+    estimate_beta0 = head(estimate, n = 1),
+    estimate_beta1 = tail(estimate, n = 1)) %>% 
+  select(.id, estimate_beta0, estimate_beta1) %>% 
+  distinct() %>% 
+  mutate(log_beta01 = log10(estimate_beta0*estimate_beta1)) %>% 
+  ggplot(aes(x = log_beta01)) +
+  geom_density(color = "chartreuse") + 
+  labs(y = "Density",
+       x = "log(β0 * β1)")  
+
+plot_r_squared + plot_log
 ```
 
 
